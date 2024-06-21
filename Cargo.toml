@@ -24,8 +24,9 @@ default = ["v4l2"]
 libv4l = ["v4l-sys"]
 v4l2 = ["v4l2-sys"]
 
-[workspace]
-members = [
-    "v4l-sys",
-    "v4l2-sys",
-]
+# TODO: Remove this when merging, only used as this is used a a submodule in a larger project
+#[workspace]
+#members = [
+#    "v4l-sys",
+#    "v4l2-sys",
+#]
