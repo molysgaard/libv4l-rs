@@ -28,6 +28,7 @@ impl Arena<allocator_api2::alloc::Global> {
     ///
     /// * `dev` - Device handle to get its file descriptor
     /// * `buf_type` - Type of the buffers
+    #[allow(unused)] // TODO: Figure out if there is a way to suppress warnings from vendored third-party libs
     pub fn new(handle: Arc<Handle>, buf_type: buffer::Type) -> Self {
         Arena {
             allocator: allocator_api2::alloc::Global,
