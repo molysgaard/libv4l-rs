@@ -57,13 +57,17 @@ mod detail {
 
 #[cfg(feature = "v4l2-sys")]
 mod detail {
-    use crate::v4l2::vidioc;
+    use crate::v4l2::{self, vidioc};
 
     pub unsafe fn open(path: *const std::os::raw::c_char, flags: i32) -> std::os::raw::c_int {
-        libc::open(path, flags)
+        // Some v4l2 implementation modify the behaviour v4l2_open function.
+        // This means that it con not be replaced by a normal libc::open call.
+        v4l2_sys::v4l2_open(path, flags)
     }
     pub unsafe fn close(fd: std::os::raw::c_int) -> std::os::raw::c_int {
-        libc::close(fd)
+        // Some v4l2 implementation modify the behaviour v4l2_close function.
+        // This means that it con not be replaced by a normal libc::close call.
+        v4l2_sys::v4l2_close(fd)
     }
     pub unsafe fn ioctl(
         fd: std::os::raw::c_int,
@@ -77,7 +81,11 @@ mod detail {
          * instead as a drop-in replacement. Details:
          * https://github.com/rust-lang/libc/issues/1036
          */
-        libc::syscall(libc::SYS_ioctl, fd, request, argp) as std::os::raw::c_int
+        //libc::syscall(libc::SYS_ioctl, fd, request, argp) as std::os::raw::c_int
+
+        // Some v4l2 implementation modify the behaviour v4l2_ioctl function.
+        // This means that it con not be replaced by a normal libc::ioctl call.
+        v4l2_sys::v4l2_ioctl(fd, request, argp)
     }
     pub unsafe fn mmap(
         start: *mut std::os::raw::c_void,
@@ -87,10 +95,18 @@ mod detail {
         fd: std::os::raw::c_int,
         offset: libc::off_t,
     ) -> *mut std::os::raw::c_void {
-        libc::mmap(start, length, prot, flags, fd, offset)
+        //libc::mmap(start, length, prot, flags, fd, offset)
+
+        // Some v4l2 implementation modify the behaviour v4l2_mmap function.
+        // This means that it con not be replaced by a normal libc::mmap call.
+        v4l2_sys::v4l2_mmap(start, length, prot, flags, fd, offset)
     }
     pub unsafe fn munmap(start: *mut std::os::raw::c_void, length: usize) -> std::os::raw::c_int {
-        libc::munmap(start, length)
+        //libc::munmap(start, length)
+
+        // Some v4l2 implementation modify the behaviour v4l2_mmap function.
+        // This means that it con not be replaced by a normal libc::mmap call.
+        v4l2_sys::v4l2_munmap(start, length)
     }
 }
 
