@@ -59,33 +59,50 @@ mod detail {
 mod detail {
     use crate::v4l2::{self, vidioc};
 
-    pub unsafe fn open(path: *const std::os::raw::c_char, flags: i32) -> std::os::raw::c_int {
-        // Some v4l2 implementation modify the behaviour v4l2_open function.
-        // This means that it con not be replaced by a normal libc::open call.
-        v4l2_sys::v4l2_open(path, flags)
+    pub unsafe fn open(
+        path: *const std::os::raw::c_char,
+        flags: i32,
+        use_libc: bool,
+    ) -> std::os::raw::c_int {
+        if use_libc {
+            libc::open(path, flags)
+        } else {
+            // Some v4l2 implementation modify the behaviour v4l2_open function.
+            // This means that it con not be replaced by a normal libc::open call.
+            v4l2_sys::v4l2_open(path, flags)
+        }
     }
-    pub unsafe fn close(fd: std::os::raw::c_int) -> std::os::raw::c_int {
-        // Some v4l2 implementation modify the behaviour v4l2_close function.
-        // This means that it con not be replaced by a normal libc::close call.
-        v4l2_sys::v4l2_close(fd)
+    pub unsafe fn close(fd: std::os::raw::c_int, use_libc: bool) -> std::os::raw::c_int {
+        if use_libc {
+            libc::close(fd)
+        } else {
+            // Some v4l2 implementation modify the behaviour v4l2_close function.
+            // This means that it con not be replaced by a normal libc::close call.
+            v4l2_sys::v4l2_close(fd)
+        }
     }
     pub unsafe fn ioctl(
         fd: std::os::raw::c_int,
         request: vidioc::_IOC_TYPE,
         argp: *mut std::os::raw::c_void,
+        use_libc: bool,
     ) -> std::os::raw::c_int {
-        /*
-         * It turns out the libc crate (and libc itself!) defines ioctl() with
-         * different, incompatible argument types on different platforms. To
-         * hack around this without conditional compilation, use syscall()
-         * instead as a drop-in replacement. Details:
-         * https://github.com/rust-lang/libc/issues/1036
-         */
-        //libc::syscall(libc::SYS_ioctl, fd, request, argp) as std::os::raw::c_int
+        if use_libc {
+            libc::ioctl(fd, request, argp)
+        } else {
+            /*
+             * It turns out the libc crate (and libc itself!) defines ioctl() with
+             * different, incompatible argument types on different platforms. To
+             * hack around this without conditional compilation, use syscall()
+             * instead as a drop-in replacement. Details:
+             * https://github.com/rust-lang/libc/issues/1036
+             */
+            //libc::syscall(libc::SYS_ioctl, fd, request, argp) as std::os::raw::c_int
 
-        // Some v4l2 implementation modify the behaviour v4l2_ioctl function.
-        // This means that it con not be replaced by a normal libc::ioctl call.
-        v4l2_sys::v4l2_ioctl(fd, request, argp)
+            // Some v4l2 implementation modify the behaviour v4l2_ioctl function.
+            // This means that it con not be replaced by a normal libc::ioctl call.
+            v4l2_sys::v4l2_ioctl(fd, request, argp)
+        }
     }
     pub unsafe fn mmap(
         start: *mut std::os::raw::c_void,
@@ -94,19 +111,28 @@ mod detail {
         flags: std::os::raw::c_int,
         fd: std::os::raw::c_int,
         offset: libc::off_t,
+        use_libc: bool,
     ) -> *mut std::os::raw::c_void {
-        //libc::mmap(start, length, prot, flags, fd, offset)
-
-        // Some v4l2 implementation modify the behaviour v4l2_mmap function.
-        // This means that it con not be replaced by a normal libc::mmap call.
-        v4l2_sys::v4l2_mmap(start, length, prot, flags, fd, offset)
+        if use_libc {
+            libc::mmap(start, length, prot, flags, fd, offset)
+        } else {
+            // Some v4l2 implementation modify the behaviour v4l2_mmap function.
+            // This means that it con not be replaced by a normal libc::mmap call.
+            v4l2_sys::v4l2_mmap(start, length, prot, flags, fd, offset)
+        }
     }
-    pub unsafe fn munmap(start: *mut std::os::raw::c_void, length: usize) -> std::os::raw::c_int {
-        //libc::munmap(start, length)
-
-        // Some v4l2 implementation modify the behaviour v4l2_mmap function.
-        // This means that it con not be replaced by a normal libc::mmap call.
-        v4l2_sys::v4l2_munmap(start, length)
+    pub unsafe fn munmap(
+        start: *mut std::os::raw::c_void,
+        length: usize,
+        use_libc: bool,
+    ) -> std::os::raw::c_int {
+        if use_libc {
+            libc::munmap(start, length)
+        } else {
+            // Some v4l2 implementation modify the behaviour v4l2_mmap function.
+            // This means that it con not be replaced by a normal libc::mmap call.
+            v4l2_sys::v4l2_munmap(start, length)
+        }
     }
 }
 
@@ -129,12 +155,16 @@ mod detail {
 ///
 /// let fd = v4l2::open("/dev/video0", libc::O_RDWR);
 /// ```
-pub fn open<P: AsRef<Path>>(path: P, flags: i32) -> io::Result<std::os::raw::c_int> {
+pub fn open<P: AsRef<Path>>(
+    path: P,
+    flags: i32,
+    use_libc: bool,
+) -> io::Result<std::os::raw::c_int> {
     let fd: std::os::raw::c_int;
     let c_path = CString::new(path.as_ref().as_os_str().as_bytes()).unwrap();
 
     unsafe {
-        fd = detail::open(c_path.as_ptr(), flags);
+        fd = detail::open(c_path.as_ptr(), flags, use_libc);
     }
 
     if fd == -1 {
@@ -164,10 +194,10 @@ pub fn open<P: AsRef<Path>>(path: P, flags: i32) -> io::Result<std::os::raw::c_i
 ///     v4l2::close(fd).unwrap();
 /// }
 /// ```
-pub fn close(fd: std::os::raw::c_int) -> io::Result<()> {
+pub fn close(fd: std::os::raw::c_int, use_libc: bool) -> io::Result<()> {
     let ret: std::os::raw::c_int;
     unsafe {
-        ret = detail::close(fd);
+        ret = detail::close(fd, use_libc);
     }
 
     if ret == -1 {
@@ -218,8 +248,9 @@ pub unsafe fn ioctl(
     fd: std::os::raw::c_int,
     request: vidioc::_IOC_TYPE,
     argp: *mut std::os::raw::c_void,
+    use_libc: bool,
 ) -> io::Result<()> {
-    let ret = detail::ioctl(fd, request, argp);
+    let ret = detail::ioctl(fd, request, argp, use_libc);
 
     if ret == -1 {
         Err(io::Error::last_os_error())
@@ -274,8 +305,9 @@ pub unsafe fn mmap(
     flags: std::os::raw::c_int,
     fd: std::os::raw::c_int,
     offset: libc::off_t,
+    use_libc: bool,
 ) -> io::Result<*mut std::os::raw::c_void> {
-    let ret = detail::mmap(start, length, prot, flags, fd, offset);
+    let ret = detail::mmap(start, length, prot, flags, fd, offset, use_libc);
     if ret as usize == std::usize::MAX {
         Err(io::Error::last_os_error())
     } else {
@@ -321,8 +353,12 @@ pub unsafe fn mmap(
 ///     v4l2::close(fd).unwrap();
 /// }
 /// ```
-pub unsafe fn munmap(start: *mut std::os::raw::c_void, length: usize) -> io::Result<()> {
-    let ret = detail::munmap(start, length);
+pub unsafe fn munmap(
+    start: *mut std::os::raw::c_void,
+    length: usize,
+    use_libc: bool,
+) -> io::Result<()> {
+    let ret = detail::munmap(start, length, use_libc);
     if ret == -1 {
         Err(io::Error::last_os_error())
     } else {

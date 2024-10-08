@@ -21,6 +21,7 @@ macro_rules! impl_enum_frameintervals {
                         self.handle().fd(),
                         v4l2::vidioc::VIDIOC_ENUM_FRAMEINTERVALS,
                         &mut v4l2_struct as *mut _ as *mut std::os::raw::c_void,
+                        self.handle().use_libc(),
                     )
                 };
 
@@ -58,6 +59,7 @@ macro_rules! impl_enum_framesizes {
                         self.handle().fd(),
                         v4l2::vidioc::VIDIOC_ENUM_FRAMESIZES,
                         &mut v4l2_struct as *mut _ as *mut std::os::raw::c_void,
+                        self.handle().use_libc(),
                     )
                 };
 
@@ -96,6 +98,7 @@ macro_rules! impl_enum_formats {
                     self.handle().fd(),
                     v4l2::vidioc::VIDIOC_ENUM_FMT,
                     &mut v4l2_fmt as *mut _ as *mut std::os::raw::c_void,
+                    self.handle().use_libc(),
                 );
             }
 
@@ -118,6 +121,7 @@ macro_rules! impl_enum_formats {
                         self.handle().fd(),
                         v4l2::vidioc::VIDIOC_ENUM_FMT,
                         &mut v4l2_fmt as *mut _ as *mut std::os::raw::c_void,
+                        self.handle().use_libc(),
                     );
                 }
             }
@@ -139,6 +143,7 @@ macro_rules! impl_format {
                     self.handle().fd(),
                     v4l2::vidioc::VIDIOC_G_FMT,
                     &mut v4l2_fmt as *mut _ as *mut std::os::raw::c_void,
+                    self.handle().use_libc(),
                 )?;
 
                 Ok(Format::from(v4l2_fmt.fmt.pix))
@@ -159,6 +164,7 @@ macro_rules! impl_set_format {
                     self.handle().fd(),
                     v4l2::vidioc::VIDIOC_S_FMT,
                     &mut v4l2_fmt as *mut _ as *mut std::os::raw::c_void,
+                    self.handle().use_libc(),
                 )?;
             }
 

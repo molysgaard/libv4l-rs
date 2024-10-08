@@ -20,12 +20,12 @@ fn main() -> io::Result<()> {
     // Allocate 4 buffers by default
     let buffer_count = 4;
 
-    let cap = Device::with_path(source)?;
+    let cap = Device::with_path(source, true)?;
     println!("Active cap capabilities:\n{}", cap.query_caps()?);
     println!("Active cap format:\n{}", Capture::format(&cap)?);
     println!("Active cap parameters:\n{}", Capture::params(&cap)?);
 
-    let out = Device::with_path(sink)?;
+    let out = Device::with_path(sink, true)?;
     println!("Active out capabilities:\n{}", out.query_caps()?);
     println!("Active out format:\n{}", Output::format(&out)?);
     println!("Active out parameters:\n{}", Output::params(&out)?);

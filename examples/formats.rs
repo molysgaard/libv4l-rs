@@ -7,7 +7,7 @@ fn main() -> io::Result<()> {
     let path = "/dev/video0";
     println!("Using device: {}\n", path);
 
-    let dev = Device::with_path(path)?;
+    let dev = Device::with_path(path, true)?;
 
     let format = dev.format()?;
     println!("Active format:\n{}", format);

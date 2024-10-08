@@ -6,7 +6,7 @@ fn main() -> io::Result<()> {
     let path = "/dev/video0";
     println!("Using device: {}\n", path);
 
-    let dev = Device::with_path(path)?;
+    let dev = Device::with_path(path, true)?;
 
     let caps = dev.query_caps()?;
     println!("Device capabilities:\n{}", caps);

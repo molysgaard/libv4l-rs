@@ -16,7 +16,7 @@ fn main() -> io::Result<()> {
     // Allocate 4 buffers by default
     let buffer_count = 4;
 
-    let dev = Device::with_path(path)?;
+    let dev = Device::with_path(path, true)?;
     let format = dev.format()?;
     let params = dev.params()?;
     println!("Active format:\n{}", format);

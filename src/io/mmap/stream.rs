@@ -117,6 +117,7 @@ impl<'a> StreamTrait for Stream<'a> {
                 self.handle.fd(),
                 v4l2::vidioc::VIDIOC_STREAMON,
                 &mut typ as *mut _ as *mut std::os::raw::c_void,
+                self.handle.use_libc(),
             )?;
         }
 
@@ -131,6 +132,7 @@ impl<'a> StreamTrait for Stream<'a> {
                 self.handle.fd(),
                 v4l2::vidioc::VIDIOC_STREAMOFF,
                 &mut typ as *mut _ as *mut std::os::raw::c_void,
+                self.handle.use_libc(),
             )?;
         }
 
@@ -151,6 +153,7 @@ impl<'a, 'b> CaptureStream<'b> for Stream<'a> {
                 self.handle.fd(),
                 v4l2::vidioc::VIDIOC_QBUF,
                 &mut v4l2_buf as *mut _ as *mut std::os::raw::c_void,
+                self.handle.use_libc(),
             )?;
         }
 
@@ -172,6 +175,7 @@ impl<'a, 'b> CaptureStream<'b> for Stream<'a> {
                 self.handle.fd(),
                 v4l2::vidioc::VIDIOC_DQBUF,
                 &mut v4l2_buf as *mut _ as *mut std::os::raw::c_void,
+                self.handle.use_libc(),
             )?;
         }
         self.arena_index = v4l2_buf.index as usize;
@@ -239,6 +243,7 @@ impl<'a, 'b> OutputStream<'b> for Stream<'a> {
                 self.handle.fd(),
                 v4l2::vidioc::VIDIOC_QBUF,
                 &mut v4l2_buf as *mut _ as *mut std::os::raw::c_void,
+                self.handle.use_libc(),
             )
         }
     }
@@ -251,6 +256,7 @@ impl<'a, 'b> OutputStream<'b> for Stream<'a> {
                 self.handle.fd(),
                 v4l2::vidioc::VIDIOC_DQBUF,
                 &mut v4l2_buf as *mut _ as *mut std::os::raw::c_void,
+                self.handle.use_libc(),
             )?;
         }
         self.arena_index = v4l2_buf.index as usize;

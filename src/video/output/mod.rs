@@ -31,6 +31,7 @@ impl Output for Device {
                 self.handle().fd(),
                 v4l2::vidioc::VIDIOC_G_PARM,
                 &mut v4l2_params as *mut _ as *mut std::os::raw::c_void,
+                self.handle().use_libc(),
             )?;
 
             Ok(Parameters::from(v4l2_params.parm.output))
@@ -49,6 +50,7 @@ impl Output for Device {
                 self.handle().fd(),
                 v4l2::vidioc::VIDIOC_S_PARM,
                 &mut v4l2_params as *mut _ as *mut std::os::raw::c_void,
+                self.handle().use_libc(),
             )?;
         }
 

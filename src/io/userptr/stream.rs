@@ -132,6 +132,7 @@ impl<A: Allocator + Clone> StreamTrait for AllocStream<A> {
                 self.handle.fd(),
                 v4l2::vidioc::VIDIOC_STREAMON,
                 &mut typ as *mut _ as *mut std::os::raw::c_void,
+                self.handle.use_libc(),
             )?;
         }
 
@@ -146,6 +147,7 @@ impl<A: Allocator + Clone> StreamTrait for AllocStream<A> {
                 self.handle.fd(),
                 v4l2::vidioc::VIDIOC_STREAMOFF,
                 &mut typ as *mut _ as *mut std::os::raw::c_void,
+                self.handle.use_libc(),
             )?;
         }
 
@@ -170,6 +172,7 @@ impl<'a, A: Allocator + Clone> CaptureStream<'a> for AllocStream<A> {
                 self.handle.fd(),
                 v4l2::vidioc::VIDIOC_QBUF,
                 &mut v4l2_buf as *mut _ as *mut std::os::raw::c_void,
+                self.handle.use_libc(),
             )?;
         }
 
@@ -191,6 +194,7 @@ impl<'a, A: Allocator + Clone> CaptureStream<'a> for AllocStream<A> {
                 self.handle.fd(),
                 v4l2::vidioc::VIDIOC_DQBUF,
                 &mut v4l2_buf as *mut _ as *mut std::os::raw::c_void,
+                self.handle.use_libc(),
             )?;
         }
         self.arena_index = v4l2_buf.index as usize;

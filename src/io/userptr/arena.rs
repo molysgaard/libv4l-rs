@@ -77,6 +77,7 @@ impl<A: Allocator + Clone> Arena<A> {
                 self.handle.fd(),
                 v4l2::vidioc::VIDIOC_G_FMT,
                 &mut v4l2_fmt as *mut _ as *mut std::os::raw::c_void,
+                self.handle.use_libc(),
             )?;
         }
 
@@ -96,6 +97,7 @@ impl<A: Allocator + Clone> Arena<A> {
                 self.handle.fd(),
                 v4l2::vidioc::VIDIOC_REQBUFS,
                 &mut v4l2_reqbufs as *mut _ as *mut std::os::raw::c_void,
+                self.handle.use_libc(),
             )?;
         }
 
@@ -123,6 +125,7 @@ impl<A: Allocator + Clone> Arena<A> {
                 self.handle.fd(),
                 v4l2::vidioc::VIDIOC_REQBUFS,
                 &mut v4l2_reqbufs as *mut _ as *mut std::os::raw::c_void,
+                self.handle.use_libc(),
             )
         }
     }

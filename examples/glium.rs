@@ -26,7 +26,7 @@ fn main() -> io::Result<()> {
     let mut format: Format;
     let params: Parameters;
 
-    let dev = RwLock::new(Device::with_path(path)?);
+    let dev = RwLock::new(Device::with_path(path, true)?);
     {
         let dev = dev.write().unwrap();
         format = dev.format()?;

@@ -60,6 +60,7 @@ impl<'a> Arena<'a> {
                 self.handle.fd(),
                 v4l2::vidioc::VIDIOC_REQBUFS,
                 &mut v4l2_reqbufs as *mut _ as *mut std::os::raw::c_void,
+                self.handle.use_libc(),
             )?;
         }
 
@@ -73,6 +74,7 @@ impl<'a> Arena<'a> {
                     self.handle.fd(),
                     v4l2::vidioc::VIDIOC_QUERYBUF,
                     &mut v4l2_buf as *mut _ as *mut std::os::raw::c_void,
+                    self.handle.use_libc(),
                 )?;
 
                 let ptr = v4l2::mmap(
@@ -82,6 +84,7 @@ impl<'a> Arena<'a> {
                     libc::MAP_SHARED,
                     self.handle.fd(),
                     v4l2_buf.m.offset as libc::off_t,
+                    self.handle.use_libc(),
                 )?;
 
                 let slice =
@@ -96,7 +99,11 @@ impl<'a> Arena<'a> {
     pub fn release(&mut self) -> io::Result<()> {
         for buf in &self.bufs {
             unsafe {
-                v4l2::munmap(buf.as_ptr() as *mut core::ffi::c_void, buf.len())?;
+                v4l2::munmap(
+                    buf.as_ptr() as *mut core::ffi::c_void,
+                    buf.len(),
+                    self.handle.use_libc(),
+                )?;
             }
         }
 
@@ -110,6 +117,7 @@ impl<'a> Arena<'a> {
                 self.handle.fd(),
                 v4l2::vidioc::VIDIOC_REQBUFS,
                 &mut v4l2_reqbufs as *mut _ as *mut std::os::raw::c_void,
+                self.handle.use_libc(),
             )?;
         }
 

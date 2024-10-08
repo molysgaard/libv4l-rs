@@ -33,16 +33,16 @@ impl Device {
     /// use v4l::device::Device;
     /// let dev = Device::new(0);
     /// ```
-    pub fn new(index: usize) -> io::Result<Self> {
+    pub fn new(index: usize, use_libc: bool) -> io::Result<Self> {
         let path = format!("{}{}", "/dev/video", index);
-        let fd = v4l2::open(path, libc::O_RDWR | libc::O_NONBLOCK)?;
+        let fd = v4l2::open(path, libc::O_RDWR | libc::O_NONBLOCK, use_libc)?;
 
         if fd == -1 {
             return Err(io::Error::last_os_error());
         }
 
         Ok(Device {
-            handle: Arc::new(Handle::new(fd)),
+            handle: Arc::new(Handle::new(fd, use_libc)),
         })
     }
 
@@ -60,15 +60,15 @@ impl Device {
     /// use v4l::device::Device;
     /// let dev = Device::with_path("/dev/video0");
     /// ```
-    pub fn with_path<P: AsRef<Path>>(path: P) -> io::Result<Self> {
-        let fd = v4l2::open(&path, libc::O_RDWR | libc::O_NONBLOCK)?;
+    pub fn with_path<P: AsRef<Path>>(path: P, use_libc: bool) -> io::Result<Self> {
+        let fd = v4l2::open(&path, libc::O_RDWR | libc::O_NONBLOCK, use_libc)?;
 
         if fd == -1 {
             return Err(io::Error::last_os_error());
         }
 
         Ok(Device {
-            handle: Arc::new(Handle::new(fd)),
+            handle: Arc::new(Handle::new(fd, use_libc)),
         })
     }
 
@@ -86,15 +86,15 @@ impl Device {
     /// use v4l::device::Device;
     /// let dev = Device::with_path("/dev/video0");
     /// ```
-    pub fn with_path_blocking<P: AsRef<Path>>(path: P) -> io::Result<Self> {
-        let fd = v4l2::open(&path, libc::O_RDWR)?;
+    pub fn with_path_blocking<P: AsRef<Path>>(path: P, use_libc: bool) -> io::Result<Self> {
+        let fd = v4l2::open(&path, libc::O_RDWR, use_libc)?;
 
         if fd == -1 {
             return Err(io::Error::last_os_error());
         }
 
         Ok(Device {
-            handle: Arc::new(Handle::new(fd)),
+            handle: Arc::new(Handle::new(fd, use_libc)),
         })
     }
 
@@ -111,6 +111,7 @@ impl Device {
                 self.handle().fd(),
                 v4l2::vidioc::VIDIOC_QUERYCAP,
                 &mut v4l2_caps as *mut _ as *mut std::os::raw::c_void,
+                self.handle().use_libc,
             )?;
 
             Ok(Capabilities::from(v4l2_caps))
@@ -130,6 +131,7 @@ impl Device {
                     self.handle().fd(),
                     v4l2::vidioc::VIDIOC_QUERY_EXT_CTRL,
                     &mut v4l2_ctrl as *mut _ as *mut std::os::raw::c_void,
+                    self.handle().use_libc,
                 ) {
                     Ok(_) => {
                         // get the basic control information
@@ -153,6 +155,7 @@ impl Device {
                                     self.handle().fd(),
                                     v4l2::vidioc::VIDIOC_QUERYMENU,
                                     &mut v4l2_menu as *mut _ as *mut std::os::raw::c_void,
+                                    self.handle().use_libc,
                                 );
 
                                 // BEWARE OF DRAGONS!
@@ -208,6 +211,7 @@ impl Device {
                 self.handle().fd(),
                 v4l2::vidioc::VIDIOC_QUERY_EXT_CTRL,
                 &mut queryctrl as *mut _ as *mut std::os::raw::c_void,
+                self.handle().use_libc,
             )?;
 
             // determine the control type
@@ -227,6 +231,7 @@ impl Device {
                 self.handle().fd(),
                 v4l2::vidioc::VIDIOC_G_EXT_CTRLS,
                 &mut v4l2_ctrls as *mut _ as *mut std::os::raw::c_void,
+                self.handle().use_libc,
             )?;
 
             let value = match description.typ {
@@ -350,6 +355,7 @@ impl Device {
                 self.handle().fd(),
                 v4l2::vidioc::VIDIOC_S_EXT_CTRLS,
                 &mut controls as *mut _ as *mut std::os::raw::c_void,
+                self.handle().use_libc,
             )
         }
     }
@@ -399,16 +405,22 @@ impl io::Write for Device {
 /// Acquiring a handle facilitates (possibly mutating) interactions with the device.
 pub struct Handle {
     fd: std::os::raw::c_int,
+    /// Whether to use libc for open/close/mmap/munmap syscalls on the device handle
+    use_libc: bool,
 }
 
 impl Handle {
-    fn new(fd: std::os::raw::c_int) -> Self {
-        Self { fd }
+    fn new(fd: std::os::raw::c_int, use_libc: bool) -> Self {
+        Self { fd, use_libc }
     }
 
     /// Returns the raw file descriptor
     pub fn fd(&self) -> std::os::raw::c_int {
         self.fd
+    }
+
+    pub fn use_libc(&self) -> bool {
+        self.use_libc
     }
 
     /// Polls the file descriptor for I/O events
@@ -446,6 +458,6 @@ impl Handle {
 
 impl Drop for Handle {
     fn drop(&mut self) {
-        v4l2::close(self.fd).unwrap();
+        v4l2::close(self.fd, self.use_libc).unwrap();
     }
 }
