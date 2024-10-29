@@ -57,7 +57,7 @@ mod detail {
 
 #[cfg(feature = "v4l2-sys")]
 mod detail {
-    use crate::v4l2::{self, vidioc};
+    use crate::v4l2::vidioc;
 
     pub unsafe fn open(
         path: *const std::os::raw::c_char,

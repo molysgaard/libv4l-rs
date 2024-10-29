@@ -86,20 +86,6 @@ impl<A: Allocator + Clone, const N: usize> AllocStream<A, N> {
     pub fn clear_timeout(&mut self) {
         self.timeout = None;
     }
-
-    fn buffer_desc(&self) -> [v4l2_buffer; N] {
-        let mut buffer_descs = [v4l2_buffer {
-            type_: 0,
-            memory: Memory::UserPtr as u32,
-            ..unsafe { mem::zeroed() }
-        }; N];
-
-        for (i, buf_type) in self.buf_types.iter().enumerate() {
-            buffer_descs[i].type_ = *buf_type as u32;
-        }
-
-        buffer_descs
-    }
 }
 
 impl<A: Allocator + Clone, const N: usize> Drop for AllocStream<A, N> {
