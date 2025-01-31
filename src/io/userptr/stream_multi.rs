@@ -169,7 +169,11 @@ impl<'a, A: Allocator + Clone, const N: usize> CaptureStreamMulti<'a, N> for All
                 v4l2::vidioc::VIDIOC_QBUF,
                 &mut v4l2_buf as *mut _ as *mut std::os::raw::c_void,
                 self.handles[devidx].use_libc(),
-            )?;
+            )
+            .map_err(|err| {
+                log::error!("VIDIOC_QBUF error: {:?}", err);
+                err
+            })?;
         }
 
         Ok(())
@@ -191,9 +195,13 @@ impl<'a, A: Allocator + Clone, const N: usize> CaptureStreamMulti<'a, N> for All
             .timeout
             .map(|t| t.try_into().unwrap())
             .unwrap_or(PollTimeout::NONE);
-        let ready_count = poll(&mut poll_fds, timeout)?;
+        let ready_count = poll(&mut poll_fds, timeout).map_err(|err| {
+            log::error!("VIDIOC_DQBUF poll error: {:?}", err);
+            err
+        })?;
 
         if ready_count == 0 {
+            log::error!("VIDIOC_DQBUF timed out");
             return Err(io::Error::new(io::ErrorKind::TimedOut, "VIDIOC_DQBUF"));
         }
 
@@ -246,6 +254,13 @@ impl<'a, A: Allocator + Clone, const N: usize> CaptureStreamMulti<'a, N> for All
                     self.queue(DevData {
                         device,
                         data: index,
+                    })
+                    .map_err(|err| {
+                        log::error!(
+                            "CaptureStreamMulti::next_all() active==false queue all error: {:?}",
+                            err
+                        );
+                        err
                     })?;
                 }
             }
@@ -255,13 +270,23 @@ impl<'a, A: Allocator + Clone, const N: usize> CaptureStreamMulti<'a, N> for All
                 self.queue(DevData {
                     device,
                     data: self.arena_indices[device],
+                })
+                .map_err(|err| {
+                    log::error!(
+                        "CaptureStreamMulti::next_all() active==true queue all error: {:?}",
+                        err
+                    );
+                    err
                 })?;
             }
         }
 
         let mut ready_map: HashMap<usize, usize> = HashMap::new();
         while ready_map.len() < N {
-            let dequeued = self.dequeue()?;
+            let dequeued = self.dequeue().map_err(|err| {
+                log::error!("CaptureStreamMulti::next_all() dequeue error: {:?}", err);
+                err
+            })?;
             for dequeued in dequeued.iter() {
                 let ent = ready_map.entry(dequeued.device);
                 match ent {
@@ -269,6 +294,10 @@ impl<'a, A: Allocator + Clone, const N: usize> CaptureStreamMulti<'a, N> for All
                         self.queue(DevData {
                             device: *o.key(),
                             data: *o.get(),
+                        })
+                        .map_err(|err| {
+                            log::error!("CaptureStreamMulti::next_all() re-queue error: {:?}", err);
+                            err
                         })?;
                         log::warn!(
                             "CaptureStreamMulti::next_all() re-queued buffer for device {}. If this happens frequently, something is wrong with the camera system.",
