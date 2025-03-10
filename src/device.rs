@@ -185,10 +185,12 @@ impl Device {
                     }
                     Err(e) => {
                         log::error!(
-                            "Error querying controls: {} {:?} {}",
+                            "Error querying controls: {:?} {} {:?} {} {}",
+                            e.kind(),
                             e.kind(),
                             e.raw_os_error(),
-                            e.to_string()
+                            e.to_string(),
+                            e.kind() != io::ErrorKind::InvalidInput
                         );
                         if controls.is_empty() || e.kind() != io::ErrorKind::InvalidInput {
                             return Err(e);
