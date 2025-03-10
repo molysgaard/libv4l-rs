@@ -136,7 +136,7 @@ impl Device {
                     self.handle().fd(),
                     v4l2::vidioc::VIDIOC_QUERY_EXT_CTRL,
                     &mut v4l2_ctrl as *mut _ as *mut std::os::raw::c_void,
-                    self.handle().use_libc,
+                    true,
                 ) {
                     Ok(_) => {
                         // get the basic control information
@@ -160,7 +160,7 @@ impl Device {
                                     self.handle().fd(),
                                     v4l2::vidioc::VIDIOC_QUERYMENU,
                                     &mut v4l2_menu as *mut _ as *mut std::os::raw::c_void,
-                                    self.handle().use_libc,
+                                    true,
                                 );
 
                                 // BEWARE OF DRAGONS!
