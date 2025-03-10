@@ -120,6 +120,7 @@ impl Device {
 
     /// Returns the supported controls for a device such as gain, focus, white balance, etc.
     pub fn query_controls(&self) -> io::Result<Vec<control::Description>> {
+        log::error!("Querying controls");
         let mut controls = Vec::new();
         unsafe {
             let mut v4l2_ctrl: v4l2_query_ext_ctrl = mem::zeroed();
