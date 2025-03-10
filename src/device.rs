@@ -183,6 +183,12 @@ impl Device {
                         controls.push(control);
                     }
                     Err(e) => {
+                        log::error!(
+                            "Error querying controls: {} {:?} {}",
+                            e.kind(),
+                            e.raw_os_error(),
+                            e.to_string()
+                        );
                         if controls.is_empty() || e.kind() != io::ErrorKind::InvalidInput {
                             return Err(e);
                         } else {
